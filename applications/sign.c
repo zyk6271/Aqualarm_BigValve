@@ -34,26 +34,21 @@ uint8_t wire_button_level_read(void)
 
 void switch_button_up_callback(void *parameter)
 {
-    LOG_D("switch_button_up_Callback\r\n");
     valve_manually(1);
 }
 
 void switch_button_down_callback(void *parameter)
 {
-    LOG_D("switch_button_down_Callback\r\n");
     valve_manually(0);
-    valve_position_reset();
 }
 
 void wire_button_up_callback(void *parameter)
 {
-    LOG_D("wire_button_up_callback\r\n");
     valve_open();
 }
 
 void wire_button_down_callback(void *parameter)
 {
-    LOG_D("wire_button_down_callback\r\n");
     valve_close();
 }
 

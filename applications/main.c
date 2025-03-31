@@ -22,6 +22,7 @@ int main(void)
     button_init();
     while (1)
     {
+        //LOG_I("Valve Position[%d]",ADC_GetValue(0));
         rt_thread_mdelay(1000);
     }
 

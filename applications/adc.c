@@ -19,7 +19,7 @@
 ADC_HandleTypeDef adc_handle;
 DMA_HandleTypeDef dma_adc_handle;
 
-uint32_t adc_value[4];
+uint32_t adc_value[4] = {0};
 
 void ADC_IRQHandler(void)
 {
@@ -28,9 +28,6 @@ void ADC_IRQHandler(void)
 
 uint32_t ADC_GetValue(uint8_t id)
 {
-    /*
-     * id = 0 : PB2(Position)
-     */
     return adc_value[0];
 }
 
@@ -44,10 +41,6 @@ void adc_init(void)
     /* DMA1_Channel1_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
     HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
-
-    /* DMA1_Channel2_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
-    HAL_NVIC_DisableIRQ(DMA1_Channel2_IRQn);
 
     ADC_ChannelConfTypeDef sConfig = { 0 };
 

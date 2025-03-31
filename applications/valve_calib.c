@@ -12,7 +12,6 @@ extern int open_forward_target_position;
 extern int open_backward_target_position;
 extern int close_forward_target_position;
 extern int close_backward_target_position;
-extern int deviation_value;
 
 void valve_calibration_load(void)
 {
@@ -38,12 +37,6 @@ void valve_calibration_load(void)
     if(close_backward_target_position == 0)
     {
         close_backward_target_position = 2580;
-    }
-
-    deviation_value = flash_get_key("deviation_value");
-    if(deviation_value == 0)
-    {
-        deviation_value = 3;
     }
 
     LOG_D("valve_calibration_load success\r\n");
@@ -80,16 +73,3 @@ void cbsave(void)
     LOG_I("close_backward_target_position set to %d\r\n",close_backward_target_position);
 }
 MSH_CMD_EXPORT(cbsave,cbsave);
-
-void dsave(void)
-{
-    rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
-    rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
-    do
-    {
-        rt_thread_mdelay(1);
-    }
-    while(ADC_GetValue(0) < 2000);
-    valve_calibration_stop();
-}
-MSH_CMD_EXPORT(dsave,dsave);
