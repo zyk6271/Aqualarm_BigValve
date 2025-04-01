@@ -39,7 +39,6 @@ int close_backward_target_position = 0;
 
 uint32_t valve_sample_value[10] = {0};
 uint32_t valve_sample_cnt = 0;
-uint32_t valve_sample_tick = 0;
 
 rt_timer_t valve_break_timer  = RT_NULL;
 rt_timer_t valve_watch_timer  = RT_NULL;
@@ -57,26 +56,24 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
     }
     else
     {
-        valve_sample_cnt = 0;
         if(valve_dead_calc(valve_sample_value,5) == RT_ERROR)
         {
+            valve_sample_cnt = 0;
             LOG_E("valve_dead_calc passing,pos %d",ADC_GetValue(0));
-            valve_sample_tick = 0;
-        }
-        LOG_I("valve_dead_calc ok,pos %d",ADC_GetValue(0));
-    }
-
-    if(valve_sample_tick++ >= 12)
-    {
-        valve_dead_detect_status = 0;
-        rt_timer_stop(valve_deadzone_detect_timer);
-        if(valve_status)
-        {
-            valve_open();
         }
         else
         {
-            valve_close();
+            valve_dead_detect_status = 0;
+            rt_timer_stop(valve_deadzone_detect_timer);
+            if(valve_status)
+            {
+                valve_open();
+            }
+            else
+            {
+                valve_close();
+            }
+            LOG_I("valve_dead_calc ok,pos %d",ADC_GetValue(0));
         }
     }
 }
@@ -102,7 +99,7 @@ void valve_init(void)
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
 
-    valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 800, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+    valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 1000, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
     valve_watch_timer = rt_timer_create("valve_run", valve_watch_timer_callback, RT_NULL, 3, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
     valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
@@ -325,7 +322,6 @@ rt_err_t valve_reverse_protection(int dir)
 void valve_position_reset(void)
 {
     valve_sample_cnt = 0;
-    valve_sample_tick = 0;
     valve_dead_detect_status = 1;
 
     rt_timer_stop(valve_watch_timer);
