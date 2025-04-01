@@ -70,13 +70,13 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
     {
         valve_dead_detect_status = 0;
         rt_timer_stop(valve_deadzone_detect_timer);
-        if(wire_button_level_read())
+        if(valve_status)
         {
-            valve_close();
+            valve_open();
         }
         else
         {
-            valve_open();
+            valve_close();
         }
     }
 }
@@ -333,6 +333,8 @@ void valve_position_reset(void)
     rt_timer_start(valve_deadzone_detect_timer);
 
     run_status = VALVE_WORK_REVERSE;
+    rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
+    rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
 }
