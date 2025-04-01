@@ -49,14 +49,14 @@ rt_err_t valve_dead_calc(uint32_t *src,uint8_t blockSize);
 
 static void valve_deadzone_detect_timer_callback(void *parameter)
 {
-    if(valve_sample_cnt < 5)
+    if(valve_sample_cnt < 8)
     {
         valve_sample_value[valve_sample_cnt] = ADC_GetValue(0);
         valve_sample_cnt++;
     }
     else
     {
-        if(valve_dead_calc(valve_sample_value,5) == RT_ERROR)
+        if(valve_dead_calc(valve_sample_value,8) == RT_ERROR)
         {
             valve_sample_cnt = 0;
             LOG_E("valve_dead_calc passing,pos %d",ADC_GetValue(0));
@@ -65,7 +65,7 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
         {
             valve_dead_detect_status = 0;
             rt_timer_stop(valve_deadzone_detect_timer);
-            if(valve_status)
+            if(wire_button_level_read() == 0)
             {
                 valve_open();
             }
@@ -101,7 +101,7 @@ void valve_init(void)
 
     valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
     valve_watch_timer = rt_timer_create("valve_run", valve_watch_timer_callback, RT_NULL, 3, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
-    valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 1000, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
+    valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 600, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
     valve_position_reset();
 }
@@ -365,7 +365,7 @@ rt_err_t valve_dead_calc(uint32_t *src,uint8_t blockSize)
     squareOfMean = (sum * sum / (int) (blockSize * (blockSize - 1U)));
 
     /* Compute variance and store result in destination */
-    if(meanOfSquares - squareOfMean > 10000)
+    if(meanOfSquares - squareOfMean > 100000)
     {
         LOG_E("valve in dead zone,meanOfSquares is %d,squareOfMean is %d\r\n",meanOfSquares,squareOfMean);
         return RT_ERROR;

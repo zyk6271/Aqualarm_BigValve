@@ -18,25 +18,25 @@ void valve_calibration_load(void)
     open_forward_target_position = flash_get_key("open_forward_target_position");
     if(open_forward_target_position == 0)
     {
-        open_forward_target_position = 1450;
+        open_forward_target_position = 1564;
     }
 
     open_backward_target_position = flash_get_key("open_backward_target_position");
     if(open_backward_target_position == 0)
     {
-        open_backward_target_position = 1510;
+        open_backward_target_position = 1511;
     }
 
     close_forward_target_position = flash_get_key("close_forward_target_position");
     if(close_forward_target_position == 0)
     {
-        close_forward_target_position = 2500;
+        close_forward_target_position = 2688;
     }
 
     close_backward_target_position = flash_get_key("close_backward_target_position");
     if(close_backward_target_position == 0)
     {
-        close_backward_target_position = 2580;
+        close_backward_target_position = 2612;
     }
 
     LOG_D("valve_calibration_load success\r\n");
