@@ -99,9 +99,9 @@ void valve_init(void)
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
 
-    valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 1000, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+    valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
     valve_watch_timer = rt_timer_create("valve_run", valve_watch_timer_callback, RT_NULL, 3, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
-    valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
+    valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 1000, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
     valve_position_reset();
 }
