@@ -156,8 +156,6 @@ void valve_manually(uint8_t state)
     {
         valve_manually_status = 1;
         break_resume_status = VALVE_WORK_MANUALLY;
-        rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
-        rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
         rt_timer_stop(valve_watch_timer);
@@ -167,6 +165,8 @@ void valve_manually(uint8_t state)
     else
     {
         valve_manually_status = 0;
+        rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
+        rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         valve_position_reset();
     }
 }
