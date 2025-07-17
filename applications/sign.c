@@ -29,7 +29,7 @@ uint8_t switch_button_level_read(void)
 
 uint8_t wire_button_level_read(void)
 {
-    return rt_pin_read(KEY_WIRE_PIN);
+    return adc_valve_input_read();
 }
 
 void switch_button_up_callback(void *parameter)
@@ -64,13 +64,13 @@ void button_watch_thread_entry(void *parameter)
 void button_init(void)
 {
     rt_pin_mode(KEY_HAND_PIN, PIN_MODE_INPUT);
-    rt_pin_mode(KEY_WIRE_PIN, PIN_MODE_INPUT);
+//    rt_pin_mode(KEY_WIRE_PIN, PIN_MODE_INPUT);
 
     Button_Create("switch_button", &switch_button, switch_button_level_read, 1);
     Button_Attach(&switch_button, BUTTON_DOWN, switch_button_up_callback);
     Button_Attach(&switch_button, BUTTON_UP, switch_button_down_callback);
 
-    Button_Create("wire_button", &wire_button, wire_button_level_read, 0);
+    Button_Create("wire_button", &wire_button, wire_button_level_read, 1);
     Button_Attach(&wire_button, BUTTON_DOWN, wire_button_up_callback);
     Button_Attach(&wire_button, BUTTON_UP, wire_button_down_callback);
 

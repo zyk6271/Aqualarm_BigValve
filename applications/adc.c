@@ -26,7 +26,19 @@ void ADC_IRQHandler(void)
     HAL_ADC_IRQHandler(&adc_handle);
 }
 
-uint32_t ADC_GetValue(uint8_t id)
+uint8_t adc_valve_input_read(void)
+{
+    if (adc_value[1] < 500)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+uint32_t adc_valve_position_read(void)
 {
     return adc_value[0];
 }
@@ -58,7 +70,7 @@ void adc_init(void)
     adc_handle.Init.LowPowerAutoWait = DISABLE;
     adc_handle.Init.LowPowerAutoPowerOff = DISABLE;
     adc_handle.Init.ContinuousConvMode = ENABLE;
-    adc_handle.Init.NbrOfConversion = 1;
+    adc_handle.Init.NbrOfConversion = 4;
     adc_handle.Init.DiscontinuousConvMode = DISABLE;
     adc_handle.Init.ExternalTrigConv = ADC_SOFTWARE_START;
     adc_handle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -83,9 +95,43 @@ void adc_init(void)
         Error_Handler();
     }
 
+    /** Configure Regular Channel
+     */
+    sConfig.Channel = ADC_CHANNEL_6;
+    sConfig.Rank = ADC_REGULAR_RANK_2;
+    if (HAL_ADC_ConfigChannel(&adc_handle, &sConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    /** Configure Regular Channel
+     */
+    sConfig.Channel = ADC_CHANNEL_7;
+    sConfig.Rank = ADC_REGULAR_RANK_3;
+    if (HAL_ADC_ConfigChannel(&adc_handle, &sConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    /** Configure Regular Channel
+     */
+    sConfig.Channel = ADC_CHANNEL_8;
+    sConfig.Rank = ADC_REGULAR_RANK_4;
+    if (HAL_ADC_ConfigChannel(&adc_handle, &sConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
     /* USER CODE BEGIN ADC_Init 2 */
     HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADC_IRQn);
 
     HAL_ADC_Start_DMA(&adc_handle, (uint32_t*) &adc_value, 4);
+
+    do
+    {
+        LOG_E("Watting for capacity ready");
+        rt_thread_mdelay(200);
+    }
+    while(adc_value[2] < 2000);
 }

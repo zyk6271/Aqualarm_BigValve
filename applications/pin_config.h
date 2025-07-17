@@ -22,14 +22,14 @@
  */
 #define MOTO_OUTPUT1_PIN                1
 #define MOTO_OUTPUT2_PIN                2
-#define MOTO_CLOSE_STATUS_PIN           11
-#define MOTO_OPEN_STATUS_PIN            10
+#define MOTO_CLOSE_STATUS_PIN           45
+#define MOTO_OPEN_STATUS_PIN            28
 
 /*
  * KEY
  */
 #define KEY_HAND_PIN                    5
-#define KEY_WIRE_PIN                    28
+//#define KEY_WIRE_PIN                    28
 /*
  * BUZZER
  */

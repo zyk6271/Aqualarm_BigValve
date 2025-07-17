@@ -51,7 +51,7 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
 {
     if(valve_sample_cnt < 8)
     {
-        valve_sample_value[valve_sample_cnt] = ADC_GetValue(0);
+        valve_sample_value[valve_sample_cnt] = adc_valve_position_read();
         valve_sample_cnt++;
     }
     else
@@ -59,13 +59,13 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
         if(valve_dead_calc(valve_sample_value,8) == RT_ERROR)
         {
             valve_sample_cnt = 0;
-            LOG_E("valve_dead_calc passing,pos %d",ADC_GetValue(0));
+            LOG_E("valve_dead_calc passing,pos %d",adc_valve_position_read());
         }
         else
         {
             valve_dead_detect_status = 0;
             rt_timer_stop(valve_deadzone_detect_timer);
-            if(wire_button_level_read() == 0)
+            if(wire_button_level_read() == 1)
             {
                 valve_open();
             }
@@ -73,7 +73,7 @@ static void valve_deadzone_detect_timer_callback(void *parameter)
             {
                 valve_close();
             }
-            LOG_I("valve_dead_calc ok,pos %d",ADC_GetValue(0));
+            LOG_I("valve_dead_calc ok,pos %d",adc_valve_position_read());
         }
     }
 }
@@ -156,8 +156,6 @@ void valve_manually(uint8_t state)
     {
         valve_manually_status = 1;
         break_resume_status = VALVE_WORK_MANUALLY;
-        rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
-        rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
         rt_timer_stop(valve_watch_timer);
@@ -167,9 +165,18 @@ void valve_manually(uint8_t state)
     else
     {
         valve_manually_status = 0;
+        rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
+        rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         valve_position_reset();
     }
 }
+
+void valve_test(void)
+{
+    rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
+    rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
+}
+MSH_CMD_EXPORT(valve_test,valve_test)
 
 void valve_open(void)
 {
@@ -182,7 +189,7 @@ void valve_open(void)
         return;
     }
 
-    position = ADC_GetValue(0);
+    position = adc_valve_position_read();
 
     if (position >= 0 && position < open_forward_target_position)
     {
@@ -225,7 +232,7 @@ void valve_close(void)
         return;
     }
 
-    position = ADC_GetValue(0);
+    position = adc_valve_position_read();
 
     if (position >= 0 && position < close_forward_target_position)
     {
@@ -259,7 +266,7 @@ void valve_close(void)
 
 void valve_position_watch(void)
 {
-    uint16_t position = ADC_GetValue(0);
+    uint16_t position = adc_valve_position_read();
     if(valve_status)
     {
         if(run_status == VALVE_WORK_FORWARD)
