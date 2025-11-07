@@ -10,8 +10,8 @@
 #include "rtthread.h"
 #include "rtdevice.h"
 #include "pin_config.h"
-#include "button.h"
 #include "flashwork.h"
+#include "button.h"
 
 #define DBG_TAG "sign"
 #define DBG_LVL DBG_LOG
@@ -63,9 +63,6 @@ void button_watch_thread_entry(void *parameter)
 
 void button_init(void)
 {
-    rt_pin_mode(KEY_HAND_PIN, PIN_MODE_INPUT);
-    rt_pin_mode(KEY_WIRE_PIN, PIN_MODE_INPUT);
-
     Button_Create("switch_button", &switch_button, switch_button_level_read, 1);
     Button_Attach(&switch_button, BUTTON_DOWN, switch_button_up_callback);
     Button_Attach(&switch_button, BUTTON_UP, switch_button_down_callback);

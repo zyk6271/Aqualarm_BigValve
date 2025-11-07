@@ -25,6 +25,9 @@
 #define MOTO_CLOSE_STATUS_PIN           11
 #define MOTO_OPEN_STATUS_PIN            10
 
+#define MOTO_OPEN_POSITION_PIN          8
+#define MOTO_CLOSE_POSITION_PIN         9
+
 /*
  * KEY
  */

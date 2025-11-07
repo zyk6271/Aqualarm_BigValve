@@ -54,7 +54,7 @@ int storage_init(void)
         return RT_ERROR;
     };
     LOG_I("Storage Init Success\r\n");
-    valve_calibration_load();
+//    valve_calibration_load();
     return RT_EOK;
 }
 
