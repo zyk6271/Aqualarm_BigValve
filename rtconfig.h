@@ -260,6 +260,34 @@
 /* Kendryte SDK */
 
 /* end of Kendryte SDK */
+
+/* WCH HAL & SDK Drivers */
+
+/* end of WCH HAL & SDK Drivers */
+
+/* AT32 HAL & SDK Drivers */
+
+/* end of AT32 HAL & SDK Drivers */
+
+/* HC32 DDL Drivers */
+
+/* end of HC32 DDL Drivers */
+
+/* NXP HAL & SDK Drivers */
+
+/* end of NXP HAL & SDK Drivers */
+
+/* NUVOTON Drivers */
+
+/* end of NUVOTON Drivers */
+
+/* GD32 Drivers */
+
+/* end of GD32 Drivers */
+
+/* HPMicro SDK */
+
+/* end of HPMicro SDK */
 /* end of HAL & SDK Drivers */
 
 /* sensors drivers */
@@ -269,19 +297,18 @@
 /* touch drivers */
 
 /* end of touch drivers */
-#define PKG_USING_BUTTON
-#define BUTTON_DEBOUNCE_TIME 2
-#define BUTTON_CONTINUOS_CYCLE 1
-#define BUTTON_LONG_CYCLE 1
-#define BUTTON_DOUBLE_TIME 15
-#define BUTTON_LONG_TIME 50
-#define PKG_USING_BUTTON_V101
 #define PKG_USING_SIGNAL_LED
 #define PKG_USING_SIGNAL_LED_V130
 
 /* signalLed Options */
 
 /* end of signalLed Options */
+#define PKG_USING_AGILE_BUTTON
+#define PKG_AGILE_BUTTON_USING_THREAD_AUTO_INIT
+#define PKG_AGILE_BUTTON_THREAD_STACK_SIZE 1024
+#define PKG_AGILE_BUTTON_THREAD_PRIORITY 15
+#define PKG_USING_AGILE_BUTTON_V111
+#define PKG_AGILE_BUTTON_VER_NUM 0x10101
 /* end of peripheral libraries and drivers */
 
 /* AI packages */
