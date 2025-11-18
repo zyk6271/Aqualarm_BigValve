@@ -2,7 +2,7 @@ import os
 
 # toolchains options
 ARCH = 'arm'
-CPU = 'cortex-m4'
+CPU = 'cortex-m0'
 CROSS_TOOL = 'gcc'
 
 # cross_tool provides the cross compiler
@@ -26,7 +26,7 @@ OBJCPY = PREFIX + 'objcopy'
 DEVICE = ''
 CFLAGS = ''
 AFLAGS = ''
-LFLAGS = '-T linkscripts//STM32WLE5CCUx//link.lds'
+LFLAGS = '-T linkscripts//STM32G030F6Px//link.lds'
 CPATH = ''
 LPATH = ''
 CXXFLAGS = ''

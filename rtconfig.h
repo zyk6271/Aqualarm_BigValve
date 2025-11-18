@@ -10,35 +10,24 @@
 #define RT_THREAD_PRIORITY_32
 #define RT_THREAD_PRIORITY_MAX 32
 #define RT_TICK_PER_SECOND 1000
-#define RT_USING_OVERFLOW_CHECK
-#define RT_USING_HOOK
-#define RT_HOOK_USING_FUNC_PTR
-#define RT_USING_IDLE_HOOK
-#define RT_IDLE_HOOK_LIST_SIZE 4
-#define IDLE_THREAD_STACK_SIZE 1024
+#define IDLE_THREAD_STACK_SIZE 256
 #define RT_USING_TIMER_SOFT
 #define RT_TIMER_THREAD_PRIO 4
-#define RT_TIMER_THREAD_STACK_SIZE 2048
+#define RT_TIMER_THREAD_STACK_SIZE 512
 
 /* kservice optimization */
 
 #define RT_KSERVICE_USING_STDLIB
 /* end of kservice optimization */
-#define RT_DEBUG
-#define RT_DEBUG_COLOR
 
 /* Inter-Thread communication */
 
 #define RT_USING_SEMAPHORE
 #define RT_USING_MUTEX
-#define RT_USING_EVENT
-#define RT_USING_MAILBOX
-#define RT_USING_MESSAGEQUEUE
 /* end of Inter-Thread communication */
 
 /* Memory Management */
 
-#define RT_USING_MEMPOOL
 #define RT_USING_SMALL_MEM
 #define RT_USING_SMALL_MEM_AS_HEAP
 #define RT_USING_HEAP
@@ -54,35 +43,18 @@
 #define RT_VER_NUM 0x40101
 /* end of RT-Thread Kernel */
 #define ARCH_ARM
-#define RT_USING_CPU_FFS
 #define ARCH_ARM_CORTEX_M
-#define ARCH_ARM_CORTEX_M4
+#define ARCH_ARM_CORTEX_M0
 
 /* RT-Thread Components */
 
 #define RT_USING_COMPONENTS_INIT
 #define RT_USING_USER_MAIN
-#define RT_MAIN_THREAD_STACK_SIZE 2048
+#define RT_MAIN_THREAD_STACK_SIZE 512
 #define RT_MAIN_THREAD_PRIORITY 10
-#define RT_USING_MSH
-#define RT_USING_FINSH
-#define FINSH_USING_MSH
-#define FINSH_THREAD_NAME "tshell"
-#define FINSH_THREAD_PRIORITY 20
-#define FINSH_THREAD_STACK_SIZE 4096
-#define FINSH_USING_HISTORY
-#define FINSH_HISTORY_LINES 5
-#define FINSH_USING_SYMTAB
-#define FINSH_CMD_SIZE 80
-#define MSH_USING_BUILT_IN_COMMANDS
-#define FINSH_USING_DESCRIPTION
-#define FINSH_ARG_MAX 10
 #define RT_USING_FAL
-#define FAL_DEBUG_CONFIG
-#define FAL_DEBUG 1
+#define FAL_DEBUG 0
 #define FAL_PART_HAS_TABLE_CFG
-#define FAL_USING_SFUD_PORT
-#define FAL_USING_NOR_FLASH_DEV_NAME "norflash0"
 
 /* Device Drivers */
 
@@ -91,12 +63,6 @@
 #define RT_USING_SERIAL_V1
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_PIN
-#define RT_USING_SPI
-#define RT_USING_SFUD
-#define RT_SFUD_USING_SFDP
-#define RT_SFUD_USING_FLASH_INFO_TABLE
-#define RT_SFUD_SPI_MAX_HZ 50000000
-#define RT_USING_WDT
 
 /* Using USB */
 
@@ -125,20 +91,6 @@
 
 /* Utilities */
 
-#define RT_USING_ULOG
-#define ULOG_OUTPUT_LVL_D
-#define ULOG_OUTPUT_LVL 7
-#define ULOG_ASSERT_ENABLE
-#define ULOG_LINE_BUF_SIZE 128
-
-/* log format */
-
-#define ULOG_USING_COLOR
-#define ULOG_OUTPUT_TIME
-#define ULOG_OUTPUT_LEVEL
-#define ULOG_OUTPUT_TAG
-/* end of log format */
-#define ULOG_BACKEND_USING_CONSOLE
 /* end of Utilities */
 /* end of RT-Thread Components */
 
@@ -203,15 +155,6 @@
 
 /* tools packages */
 
-#define PKG_USING_EASYFLASH
-#define PKG_EASYFLASH_ENV
-#define PKG_EASYFLASH_ERASE_GRAN 4096
-#define PKG_EASYFLASH_WRITE_GRAN_1BIT
-#define PKG_EASYFLASH_WRITE_GRAN 1
-#define PKG_EASYFLASH_START_ADDR 0
-#define PKG_EASYFLASH_DEBUG
-#define PKG_USING_EASYFLASH_V410
-#define PKG_EASYFLASH_VER_NUM 0x40100
 /* end of tools packages */
 
 /* system packages */
@@ -231,18 +174,6 @@
 /* Micrium: Micrium software products porting for RT-Thread */
 
 /* end of Micrium: Micrium software products porting for RT-Thread */
-#define PKG_USING_SYSWATCH
-#define SYSWATCH_EXCEPT_RESOLVE_MODE_0
-#define SYSWATCH_EXCEPT_RESOLVE_MODE 0
-#define SYSWATCH_EXCEPT_TIMEOUT 60
-#define SYSWATCH_EXCEPT_CONFIRM_TMO 15
-#define SYSWATCH_EXCEPT_RESUME_DLY 15
-#define SYSWATCH_THREAD_PRIO 0
-#define SYSWATCH_THREAD_STK_SIZE 1024
-#define SYSWATCH_THREAD_NAME "syswatch"
-#define SYSWATCH_WDT_NAME "wdt"
-#define SYSWATCH_WDT_TIMEOUT 5
-#define PKG_USING_SYSWATCH_LATEST_VERSION
 /* end of system packages */
 
 /* peripheral libraries and drivers */
@@ -297,16 +228,10 @@
 /* touch drivers */
 
 /* end of touch drivers */
-#define PKG_USING_SIGNAL_LED
-#define PKG_USING_SIGNAL_LED_V130
-
-/* signalLed Options */
-
-/* end of signalLed Options */
 #define PKG_USING_AGILE_BUTTON
 #define PKG_AGILE_BUTTON_USING_THREAD_AUTO_INIT
-#define PKG_AGILE_BUTTON_THREAD_STACK_SIZE 1024
-#define PKG_AGILE_BUTTON_THREAD_PRIORITY 15
+#define PKG_AGILE_BUTTON_THREAD_STACK_SIZE 256
+#define PKG_AGILE_BUTTON_THREAD_PRIORITY 28
 #define PKG_USING_AGILE_BUTTON_V111
 #define PKG_AGILE_BUTTON_VER_NUM 0x10101
 /* end of peripheral libraries and drivers */

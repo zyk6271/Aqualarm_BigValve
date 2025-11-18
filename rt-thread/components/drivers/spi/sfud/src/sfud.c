@@ -862,12 +862,8 @@ static sfud_err read_jedec_id(sfud_flash *flash) {
         flash->chip.mf_id = recv_data[0];
         flash->chip.type_id = recv_data[1];
         flash->chip.capacity_id = recv_data[2];
-        SFUD_DEBUG("The flash device manufacturer ID is 0x%02X",
-                flash->chip.mf_id);
-        SFUD_DEBUG("The flash device memory type ID is 0x%02X",
-                flash->chip.type_id);
-        SFUD_DEBUG("The flash device capacity ID is 0x%02X.",
-                flash->chip.capacity_id);
+        SFUD_DEBUG("The flash device manufacturer ID is 0x%02X, memory type ID is 0x%02X, capacity ID is 0x%02X.",
+                flash->chip.mf_id, flash->chip.type_id, flash->chip.capacity_id);
     } else {
         SFUD_INFO("Error: Read flash device JEDEC ID error.");
     }

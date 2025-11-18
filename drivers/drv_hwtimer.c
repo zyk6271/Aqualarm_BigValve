@@ -1,20 +1,19 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2018, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author       Notes
  * 2018-12-10     zylx         first version
- * 2020-06-16     thread-liu   Porting for stm32mp1
- * 2020-08-25     linyongkang  Fix the timer clock frequency doubling problem
- * 2020-10-14     Dozingfiretruck   Porting for stm32wbxx
  */
 
 #include <board.h>
-#include "drv_config.h"
+#include<rtthread.h>
+#include<rtdevice.h>
 
 #ifdef BSP_USING_TIM
+#include "drv_config.h"
 
 //#define DRV_DEBUG
 #define LOG_TAG             "drv.hwtimer"
@@ -79,7 +78,7 @@ enum
 struct stm32_hwtimer
 {
     rt_hwtimer_t time_device;
-    TIM_HandleTypeDef tim_handle;
+    TIM_HandleTypeDef    tim_handle;
     IRQn_Type tim_irqn;
     char *name;
 };
@@ -155,93 +154,48 @@ static struct stm32_hwtimer stm32_hwtimer_obj[] =
 #endif
 };
 
-/* APBx timer clocks frequency doubler state related to APB1CLKDivider value */
-static void pclkx_doubler_get(rt_uint32_t *pclk1_doubler, rt_uint32_t *pclk2_doubler)
-{
-    rt_uint32_t flatency = 0;
-    RCC_ClkInitTypeDef RCC_ClkInitStruct =
-    {   0};
-
-    RT_ASSERT(pclk1_doubler != RT_NULL);
-    RT_ASSERT(pclk1_doubler != RT_NULL);
-
-    HAL_RCC_GetClockConfig(&RCC_ClkInitStruct, &flatency);
-
-    *pclk1_doubler = 1;
-    *pclk2_doubler = 1;
-
-#if defined(SOC_SERIES_STM32MP1)
-    if (RCC_ClkInitStruct.APB1_Div != RCC_APB1_DIV1)
-    {
-        *pclk1_doubler = 2;
-    }
-    if (RCC_ClkInitStruct.APB2_Div != RCC_APB2_DIV1)
-    {
-        *pclk2_doubler = 2;
-    }
-#else
-    if (RCC_ClkInitStruct.APB1CLKDivider != RCC_HCLK_DIV1)
-    {
-        *pclk1_doubler = 2;
-    }
-#if !defined(SOC_SERIES_STM32F0) && !defined(SOC_SERIES_STM32G0)
-    if (RCC_ClkInitStruct.APB2CLKDivider != RCC_HCLK_DIV1)
-    {
-        *pclk2_doubler = 2;
-    }
-#endif
-#endif
-}
-
 static void timer_init(struct rt_hwtimer_device *timer, rt_uint32_t state)
 {
     uint32_t prescaler_value = 0;
-    uint32_t pclk1_doubler, pclk2_doubler;
     TIM_HandleTypeDef *tim = RT_NULL;
     struct stm32_hwtimer *tim_device = RT_NULL;
 
     RT_ASSERT(timer != RT_NULL);
     if (state)
     {
-        tim = (TIM_HandleTypeDef *) timer->parent.user_data;
-        tim_device = (struct stm32_hwtimer *) timer;
-
-        pclkx_doubler_get(&pclk1_doubler, &pclk2_doubler);
+        tim = (TIM_HandleTypeDef *)timer->parent.user_data;
+        tim_device = (struct stm32_hwtimer *)timer;
 
         /* time init */
 #if defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
         if (tim->Instance == TIM9 || tim->Instance == TIM10 || tim->Instance == TIM11)
 #elif defined(SOC_SERIES_STM32L4)
         if (tim->Instance == TIM15 || tim->Instance == TIM16 || tim->Instance == TIM17)
-#elif defined(SOC_SERIES_STM32WB) || defined(SOC_SERIES_STM32WL)
-        if (tim->Instance == TIM16 || tim->Instance == TIM17)
-#elif defined(SOC_SERIES_STM32MP1)
-        if(tim->Instance == TIM14 || tim->Instance == TIM16 || tim->Instance == TIM17)
 #elif defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
         if (0)
 #endif
         {
 #if !defined(SOC_SERIES_STM32F0) && !defined(SOC_SERIES_STM32G0)
-            prescaler_value = (uint32_t) (HAL_RCC_GetPCLK2Freq() * pclk2_doubler / 10000) - 1;
+            prescaler_value = (uint32_t)(HAL_RCC_GetPCLK2Freq() * 2 / 10000) - 1;
 #endif
         }
         else
         {
-            prescaler_value = (uint32_t) (HAL_RCC_GetPCLK1Freq() * pclk1_doubler / 10000) - 1;
+            prescaler_value = (uint32_t)(HAL_RCC_GetPCLK1Freq() * 2 / 10000) - 1;
         }
-        tim->Init.Period = 10000 - 1;
-        tim->Init.Prescaler = prescaler_value;
-        tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+        tim->Init.Period            = 10000 - 1;
+        tim->Init.Prescaler         = prescaler_value;
+        tim->Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
         if (timer->info->cntmode == HWTIMER_CNTMODE_UP)
         {
-            tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+            tim->Init.CounterMode   = TIM_COUNTERMODE_UP;
         }
         else
         {
-            tim->Init.CounterMode = TIM_COUNTERMODE_DOWN;
+            tim->Init.CounterMode   = TIM_COUNTERMODE_DOWN;
         }
         tim->Init.RepetitionCounter = 0;
-#if defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0) || defined(SOC_SERIES_STM32MP1) || defined(SOC_SERIES_STM32WB) || defined(SOC_SERIES_STM32WL)
+#if defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
         tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 #endif
         if (HAL_TIM_Base_Init(tim) != HAL_OK)
@@ -274,7 +228,7 @@ static rt_err_t timer_start(rt_hwtimer_t *timer, rt_uint32_t t, rt_hwtimer_mode_
 
     RT_ASSERT(timer != RT_NULL);
 
-    tim = (TIM_HandleTypeDef *) timer->parent.user_data;
+    tim = (TIM_HandleTypeDef *)timer->parent.user_data;
 
     /* set tim cnt */
     __HAL_TIM_SET_COUNTER(tim, 0);
@@ -290,7 +244,7 @@ static rt_err_t timer_start(rt_hwtimer_t *timer, rt_uint32_t t, rt_hwtimer_mode_
     {
         tim->Instance->CR1 &= (~TIM_OPMODE_SINGLE);
     }
-
+	
     /* start timer */
     if (HAL_TIM_Base_Start_IT(tim) != HAL_OK)
     {
@@ -307,7 +261,7 @@ static void timer_stop(rt_hwtimer_t *timer)
 
     RT_ASSERT(timer != RT_NULL);
 
-    tim = (TIM_HandleTypeDef *) timer->parent.user_data;
+    tim = (TIM_HandleTypeDef *)timer->parent.user_data;
 
     /* stop timer */
     HAL_TIM_Base_Stop_IT(tim);
@@ -320,56 +274,55 @@ static rt_err_t timer_ctrl(rt_hwtimer_t *timer, rt_uint32_t cmd, void *arg)
 {
     TIM_HandleTypeDef *tim = RT_NULL;
     rt_err_t result = RT_EOK;
-    uint32_t pclk1_doubler, pclk2_doubler;
 
     RT_ASSERT(timer != RT_NULL);
     RT_ASSERT(arg != RT_NULL);
 
-    tim = (TIM_HandleTypeDef *) timer->parent.user_data;
+    tim = (TIM_HandleTypeDef *)timer->parent.user_data;
 
     switch (cmd)
     {
-        case HWTIMER_CTRL_FREQ_SET:
-        {
-            rt_uint32_t freq;
-            rt_uint16_t val;
+    case HWTIMER_CTRL_FREQ_SET:
+    {
+        rt_uint32_t freq;
+        rt_uint16_t val;
 
-            /* set timer frequence */
-            freq = *((rt_uint32_t *) arg);
-
-            pclkx_doubler_get(&pclk1_doubler, &pclk2_doubler);
+        /* set timer frequence */
+        freq = *((rt_uint32_t *)arg);
 
 #if defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
-            if (tim->Instance == TIM9 || tim->Instance == TIM10 || tim->Instance == TIM11)
+        if (tim->Instance == TIM9 || tim->Instance == TIM10 || tim->Instance == TIM11)
 #elif defined(SOC_SERIES_STM32L4)
-            if (tim->Instance == TIM15 || tim->Instance == TIM16 || tim->Instance == TIM17)
-#elif defined(SOC_SERIES_STM32WB) || defined(SOC_SERIES_STM32WL)
-            if (tim->Instance == TIM16 || tim->Instance == TIM17)
-#elif defined(SOC_SERIES_STM32MP1)
-            if(tim->Instance == TIM14 || tim->Instance == TIM16 || tim->Instance == TIM17)
+        if (tim->Instance == TIM15 || tim->Instance == TIM16 || tim->Instance == TIM17)
 #elif defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
-            if (0)
+        if (0)
 #endif
-            {
-#if !defined(SOC_SERIES_STM32F0) && !defined(SOC_SERIES_STM32G0)
-                val = HAL_RCC_GetPCLK2Freq() * pclk2_doubler / freq;
-#endif
-            }
-            else
-            {
-                val = HAL_RCC_GetPCLK1Freq() * pclk1_doubler / freq;
-            }
-            __HAL_TIM_SET_PRESCALER(tim, val - 1);
-
-            /* Update frequency value */
-            tim->Instance->EGR |= TIM_EVENTSOURCE_UPDATE;
-        }
-        break;
-        default:
         {
-            result = -RT_ENOSYS;
+#if defined(SOC_SERIES_STM32L4)
+            val = HAL_RCC_GetPCLK2Freq() / freq;
+#elif defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
+            val = HAL_RCC_GetPCLK2Freq() * 2 / freq;
+#endif
         }
-        break;
+        else
+        {
+#if defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
+            val = HAL_RCC_GetPCLK1Freq() * 2 / freq;
+#elif defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
+            val = HAL_RCC_GetPCLK1Freq() / freq;
+#endif
+        }
+        __HAL_TIM_SET_PRESCALER(tim, val - 1);
+
+        /* Update frequency value */
+        tim->Instance->EGR |= TIM_EVENTSOURCE_UPDATE;
+    }
+    break;
+    default:
+    {
+        result = -RT_ENOSYS;
+    }
+    break;
     }
 
     return result;
@@ -381,7 +334,7 @@ static rt_uint32_t timer_counter_get(rt_hwtimer_t *timer)
 
     RT_ASSERT(timer != RT_NULL);
 
-    tim = (TIM_HandleTypeDef *) timer->parent.user_data;
+    tim = (TIM_HandleTypeDef *)timer->parent.user_data;
 
     return tim->Instance->CNT;
 }
@@ -389,19 +342,14 @@ static rt_uint32_t timer_counter_get(rt_hwtimer_t *timer)
 static const struct rt_hwtimer_info _info = TIM_DEV_INFO_CONFIG;
 
 static const struct rt_hwtimer_ops _ops =
-{   .init = timer_init, .start = timer_start, .stop = timer_stop, .count_get =
-    timer_counter_get, .control = timer_ctrl,};
-
-#ifdef BSP_USING_TIM1
-void TIM1_UP_IRQHandler(void)
 {
-    /* enter interrupt */
-    rt_interrupt_enter();
-    HAL_TIM_IRQHandler(&stm32_hwtimer_obj[TIM1_INDEX].tim_handle);
-    /* leave interrupt */
-    rt_interrupt_leave();
-}
-#endif
+    .init = timer_init,
+    .start = timer_start,
+    .stop = timer_stop,
+    .count_get = timer_counter_get,
+    .control = timer_ctrl,
+};
+
 #ifdef BSP_USING_TIM2
 void TIM2_IRQHandler(void)
 {
@@ -464,9 +412,9 @@ void TIM8_UP_TIM13_IRQHandler(void)
 #endif
 #ifdef BSP_USING_TIM14
 #if defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
-void TIM8_TRG_COM_TIM14_IRQHandler(void)
-#elif defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32MP1)
-void TIM14_IRQHandler(void)
+    void TIM8_TRG_COM_TIM14_IRQHandler(void)
+#elif defined(SOC_SERIES_STM32F0)
+    void TIM14_IRQHandler(void)
 #endif
 {
     /* enter interrupt */
@@ -487,10 +435,10 @@ void TIM1_BRK_TIM15_IRQHandler(void)
 }
 #endif
 #ifdef BSP_USING_TIM16
-#if defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32WB)
-void TIM1_UP_TIM16_IRQHandler(void)
-#elif defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32MP1)
-void TIM16_IRQHandler(void)
+#if defined(SOC_SERIES_STM32L4)
+    void TIM1_UP_TIM16_IRQHandler(void)
+#elif defined(SOC_SERIES_STM32F0)
+    void TIM16_IRQHandler(void)
 #endif
 {
     /* enter interrupt */
@@ -501,10 +449,10 @@ void TIM16_IRQHandler(void)
 }
 #endif
 #ifdef BSP_USING_TIM17
-#if defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32WB)
-void TIM1_TRG_COM_TIM17_IRQHandler(void)
-#elif defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32MP1) || defined(SOC_SERIES_STM32WL)
-void TIM17_IRQHandler(void)
+#if defined(SOC_SERIES_STM32L4)
+    void TIM1_TRG_COM_TIM17_IRQHandler(void)
+#elif defined(SOC_SERIES_STM32F0)
+    void TIM17_IRQHandler(void)
 #endif
 {
     /* enter interrupt */
@@ -517,12 +465,6 @@ void TIM17_IRQHandler(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-#ifdef BSP_USING_TIM1
-    if (htim->Instance == TIM1)
-    {
-        rt_device_hwtimer_isr(&stm32_hwtimer_obj[TIM1_INDEX].time_device);
-    }
-#endif
 #ifdef BSP_USING_TIM2
     if (htim->Instance == TIM2)
     {
@@ -593,9 +535,8 @@ static int stm32_hwtimer_init(void)
     for (i = 0; i < sizeof(stm32_hwtimer_obj) / sizeof(stm32_hwtimer_obj[0]); i++)
     {
         stm32_hwtimer_obj[i].time_device.info = &_info;
-        stm32_hwtimer_obj[i].time_device.ops = &_ops;
-        if (rt_device_hwtimer_register(&stm32_hwtimer_obj[i].time_device, stm32_hwtimer_obj[i].name,
-                        &stm32_hwtimer_obj[i].tim_handle) == RT_EOK)
+        stm32_hwtimer_obj[i].time_device.ops  = &_ops;
+        if (rt_device_hwtimer_register(&stm32_hwtimer_obj[i].time_device, stm32_hwtimer_obj[i].name, &stm32_hwtimer_obj[i].tim_handle) == RT_EOK)
         {
             LOG_D("%s register success", stm32_hwtimer_obj[i].name);
         }

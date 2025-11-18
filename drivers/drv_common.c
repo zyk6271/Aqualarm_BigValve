@@ -13,11 +13,11 @@
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
-static void reboot(void)
+static void reboot(uint8_t argc, char **argv)
 {
     rt_hw_cpu_reset();
 }
-MSH_CMD_EXPORT(reboot,reboot);
+MSH_CMD_EXPORT_ALIAS(reboot, __cmd_reboot, Reboot System);
 #endif /* RT_USING_FINSH */
 
 /* SysTick configuration */

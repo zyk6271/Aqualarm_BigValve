@@ -6,7 +6,7 @@ cwd = GetCurrentDir()
 src  = Glob('*.c')
 # add cubemx drivers
 src = Split('''
-Src/stm32wlxx_hal_msp.c
+Src/stm32g0xx_hal_msp.c
 Src/main.c
 ''')
 

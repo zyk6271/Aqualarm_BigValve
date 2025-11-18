@@ -17,123 +17,131 @@
 #define DBG_LVL DBG_LOG
 #include <rtdbg.h>
 
-typedef enum
-{
-    VALVE_WORK_REVERSE = -1,
-    VALVE_WORK_STOP,
-    VALVE_WORK_FORWARD,
-    VALVE_WORK_MANUALLY
-} Valve_Work;
-
-Valve_Work break_resume_status = VALVE_WORK_STOP;//-1 is back,0 is stop,1 is forward
-Valve_Work run_status = VALVE_WORK_STOP;//-1 is back,0 is stop,1 is forward
-
-rt_bool_t valve_manually_status = 0;//0 is automotive,1 is manually
-rt_bool_t valve_dead_detect_status = 0;//1 is detecting now
-rt_bool_t valve_status = 0;//0 is close 1 is open
+int pre_run_status = 0;//-1 is back,0 is stop,1 is forward
+int run_status = 0;//-1 is back,0 is stop,1 is forward
+int manually_status = 0;//0 is automotive,1 is manually
+int detect_flag = 0;
+int valve_status = 0;//0 is close 1 is open
 
 int open_forward_target_position = 0;
 int open_backward_target_position = 0;
 int close_forward_target_position = 0;
 int close_backward_target_position = 0;
 
-uint32_t valve_sample_value[10] = {0};
-uint32_t valve_sample_cnt = 0;
+uint32_t pos_value[10];
+uint32_t pos_senq_cnt = 0;
+uint32_t pos_total_cnt = 0;
 
-rt_timer_t valve_break_timer  = RT_NULL;
-rt_timer_t valve_watch_timer  = RT_NULL;
-rt_timer_t valve_deadzone_detect_timer  = RT_NULL;
+rt_timer_t delay_timer  = RT_NULL;
+rt_timer_t run_timer  = RT_NULL;
+rt_timer_t detect_timer  = RT_NULL;
 
-rt_err_t valve_reverse_protection(int dir);
 rt_err_t valve_dead_calc(uint32_t *src,uint8_t blockSize);
+rt_err_t valve_reverse_proetction(int dir);
 
-static void valve_deadzone_detect_timer_callback(void *parameter)
+static void detect_timer_callback(void *parameter)
 {
-    if(valve_sample_cnt < 8)
+    pos_value[pos_senq_cnt++] = ADC_GetValue(1);
+    pos_total_cnt ++;
+    if(pos_senq_cnt > 10)
     {
-        valve_sample_value[valve_sample_cnt] = ADC_GetValue(0);
-        valve_sample_cnt++;
-    }
-    else
-    {
-        if(valve_dead_calc(valve_sample_value,8) == RT_ERROR)
+        pos_senq_cnt = 0;
+        if(valve_dead_calc(pos_value,10) == RT_ERROR)
         {
-            valve_sample_cnt = 0;
-            LOG_E("valve_dead_calc passing,pos %d",ADC_GetValue(0));
+            pos_total_cnt = 0;
+        }
+    }
+    if(pos_total_cnt > 500)
+    {
+        detect_flag = 0;
+        rt_timer_stop(detect_timer);
+        if(wire_button_level_read() == 0)
+        {
+            valve_open();
         }
         else
         {
-            valve_dead_detect_status = 0;
-            rt_timer_stop(valve_deadzone_detect_timer);
-            if(wire_button_level_read() == 0)
-            {
-                valve_open();
-            }
-            else
-            {
-                valve_close();
-            }
-            LOG_I("valve_dead_calc ok,pos %d",ADC_GetValue(0));
+            valve_close();
         }
     }
 }
 
-static void valve_break_timer_callback(void *parameter)
+static void delay_timer_callback(void *parameter)
 {
-    valve_run(break_resume_status);
+    valve_run(pre_run_status);
 }
 
-static void valve_watch_timer_callback(void *parameter)
+static void run_timer_callback(void *parameter)
 {
     valve_position_watch();
 }
 
 void valve_init(void)
 {
+    run_status = 0;
     rt_pin_mode(MOTO_CLOSE_STATUS_PIN, PIN_MODE_OUTPUT);
     rt_pin_mode(MOTO_OPEN_STATUS_PIN, PIN_MODE_OUTPUT);
-    rt_pin_mode(MOTO_OUTPUT1_PIN, PIN_MODE_OUTPUT);
-    rt_pin_mode(MOTO_OUTPUT2_PIN, PIN_MODE_OUTPUT);
     rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
     rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
+    rt_pin_mode(MOTO_OUTPUT1_PIN, PIN_MODE_OUTPUT);
+    rt_pin_mode(MOTO_OUTPUT2_PIN, PIN_MODE_OUTPUT);
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
+    delay_timer = rt_timer_create("valve_delay", delay_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+    run_timer = rt_timer_create("valve_run", run_timer_callback, RT_NULL, 3, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
+    detect_timer = rt_timer_create("valve_detect", detect_timer_callback, RT_NULL, 10, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
-    valve_break_timer = rt_timer_create("valve_break", valve_break_timer_callback, RT_NULL, 500, RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
-    valve_watch_timer = rt_timer_create("valve_run", valve_watch_timer_callback, RT_NULL, 3, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
-    valve_deadzone_detect_timer = rt_timer_create("valve_detect", valve_deadzone_detect_timer_callback, RT_NULL, 600, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
+    open_forward_target_position = flash_get_key(0);
+    if(open_forward_target_position == 0)
+    {
+        open_forward_target_position = 1460;
+    }
+
+    open_backward_target_position = flash_get_key(1);
+    if(open_backward_target_position == 0)
+    {
+        open_backward_target_position = 1540;
+    }
+
+    close_forward_target_position = flash_get_key(2);
+    if(close_forward_target_position == 0)
+    {
+        close_forward_target_position = 2590;
+    }
+
+    close_backward_target_position = flash_get_key(3);
+    if(close_backward_target_position == 0)
+    {
+        close_backward_target_position = 2690;
+    }
 
     valve_position_reset();
 }
 
-void valve_run(Valve_Work dir)
+void valve_run(int dir)
 {
     switch(dir)
     {
-    case VALVE_WORK_REVERSE:
+    case -1:
         run_status = dir;
         rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
-        rt_timer_start(valve_watch_timer);
+        rt_timer_start(run_timer);
         break;
-    case VALVE_WORK_STOP:
+    case 0:
         run_status = dir;
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
         break;
-    case VALVE_WORK_FORWARD:
+    case 1:
         run_status = dir;
         rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
-        rt_timer_start(valve_watch_timer);
-        break;
-    case VALVE_WORK_MANUALLY:
-        rt_pin_write(MOTO_OUTPUT1_PIN, PIN_LOW);
-        rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
+        rt_timer_start(run_timer);
         break;
     default:
         break;
@@ -142,177 +150,156 @@ void valve_run(Valve_Work dir)
 
 void valve_stop(void)
 {
-    break_resume_status = VALVE_WORK_STOP;
+    pre_run_status = 0;
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
-    rt_timer_stop(valve_watch_timer);
-    rt_timer_stop(valve_deadzone_detect_timer);
-    rt_timer_start(valve_break_timer);
+    rt_timer_stop(run_timer);
+    rt_timer_stop(detect_timer);
+    rt_timer_start(delay_timer);
+    rt_kprintf("valve_stop\r\n");
 }
 
 void valve_manually(uint8_t state)
 {
+    manually_status = state;
     if(state)
     {
-        valve_manually_status = 1;
-        break_resume_status = VALVE_WORK_MANUALLY;
-        rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
-        rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
-        rt_timer_stop(valve_watch_timer);
-        rt_timer_stop(valve_deadzone_detect_timer);
-        rt_timer_start(valve_break_timer);
-    }
-    else
-    {
-        valve_manually_status = 0;
-        rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
-        rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
-        valve_position_reset();
+        valve_stop();
     }
 }
 
 void valve_open(void)
 {
-    int dir,position = 0;
+    int dir = 0;
+    uint32_t position = ADC_GetValue(1);
 
     valve_status = 1;
 
-    if(valve_manually_status == 1 || valve_dead_detect_status == 1)
+    if(manually_status == 1 || detect_flag == 1)
     {
         return;
     }
 
-    position = ADC_GetValue(0);
-
     if (position >= 0 && position < open_forward_target_position)
     {
-        dir = VALVE_WORK_REVERSE;
+        dir = 1;
     }
-    else if (position > open_backward_target_position && position <= 4096)
+    else if (position > open_backward_target_position && position < 4096)
     {
-        dir = VALVE_WORK_FORWARD;
+        dir = -1;
     }
     else
     {
-        dir = VALVE_WORK_STOP;
+        return;
     }
 
-    rt_timer_stop(valve_break_timer);
-    rt_timer_stop(valve_watch_timer);
-    rt_timer_stop(valve_deadzone_detect_timer);
+    rt_timer_stop(delay_timer);
+    rt_timer_stop(run_timer);
 
-    if(valve_reverse_protection(dir) == RT_EOK)
+    if(valve_reverse_proetction(dir) == RT_EOK)
     {
         valve_run(dir);
     }
     else
     {
-        break_resume_status = dir;
+        pre_run_status = dir;
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
-        rt_timer_start(valve_break_timer);
+        rt_timer_start(delay_timer);
     }
 }
 
 void valve_close(void)
 {
-    int dir,position = 0;
-
+    int dir = 0;
+    uint32_t position = ADC_GetValue(1);
     valve_status = 0;
 
-    if(valve_manually_status == 1 || valve_dead_detect_status == 1)
+    if(manually_status == 1 || detect_flag == 1)
     {
         return;
     }
 
-    position = ADC_GetValue(0);
-
     if (position >= 0 && position < close_forward_target_position)
     {
-        dir = VALVE_WORK_REVERSE;
+        dir = 1;
     }
-    else if (position > close_backward_target_position && position <= 4096)
+    else if (position > close_backward_target_position && position < 4096)
     {
-        dir = VALVE_WORK_FORWARD;
+        dir = -1;
     }
     else
     {
-        dir = VALVE_WORK_STOP;
+        return;
     }
 
-    rt_timer_stop(valve_break_timer);
-    rt_timer_stop(valve_watch_timer);
-    rt_timer_stop(valve_deadzone_detect_timer);
+    rt_timer_stop(delay_timer);
+    rt_timer_stop(run_timer);
 
-    if(valve_reverse_protection(dir) == RT_EOK)
+    if(valve_reverse_proetction(dir) == RT_EOK)
     {
         valve_run(dir);
     }
     else
     {
-        break_resume_status = dir;
+        pre_run_status = dir;
         rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
         rt_pin_write(MOTO_OUTPUT2_PIN, PIN_HIGH);
-        rt_timer_start(valve_break_timer);
+        rt_timer_start(delay_timer);
     }
 }
 
 void valve_position_watch(void)
 {
-    uint16_t position = ADC_GetValue(0);
     if(valve_status)
     {
-        if(run_status == VALVE_WORK_FORWARD)
+        if(run_status > 0)
         {
-            if(position <= open_forward_target_position)
+            if(ADC_GetValue(1) > open_forward_target_position)
             {
                 valve_stop();
                 rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
                 rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_HIGH);
-                LOG_I("valve_position_watch valve stop,code 1,open_forward_target_position %d\r\n",open_forward_target_position);
             }
         }
-        else if(run_status == VALVE_WORK_REVERSE)
+        else if(run_status < 0)
         {
-            if(position >= open_backward_target_position)
+            if(ADC_GetValue(1) < open_backward_target_position)
             {
                 valve_stop();
                 rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
                 rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_HIGH);
-                LOG_I("valve_position_watch valve stop,code 2,open_backward_target_position %d\r\n",open_backward_target_position);
             }
         }
     }
     else
     {
-        if(run_status == VALVE_WORK_FORWARD)
+        if(run_status > 0)
         {
-            if(position <= close_forward_target_position)
+            if(ADC_GetValue(1) > close_forward_target_position)
             {
                 valve_stop();
                 rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_HIGH);
                 rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
-                LOG_I("valve_position_watch valve stop,code 3,close_forward_target_position %d\r\n",close_forward_target_position);
             }
         }
-        else if(run_status == VALVE_WORK_REVERSE)
+        else if(run_status < 0)
         {
-            if(position >= close_backward_target_position)
+            if(ADC_GetValue(1) < close_backward_target_position)
             {
                 valve_stop();
                 rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_HIGH);
                 rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
-                LOG_I("valve_position_watch valve stop,code 4,close_backward_target_position %d\r\n",close_backward_target_position);
             }
         }
     }
 }
 
-rt_err_t valve_reverse_protection(int dir)
+rt_err_t valve_reverse_proetction(int dir)
 {
-    if(dir != run_status && run_status != VALVE_WORK_STOP)//存在换向
+    if(dir != run_status && run_status != 0)//存在换向
     {
-        LOG_E("reverse_proetction\r\n");
+        rt_kprintf("reverse_proetction\r\n");
         return RT_ERROR;
     }
 
@@ -321,27 +308,28 @@ rt_err_t valve_reverse_protection(int dir)
 
 void valve_position_reset(void)
 {
-    valve_sample_cnt = 0;
-    valve_dead_detect_status = 1;
-
-    rt_timer_stop(valve_watch_timer);
-    rt_timer_stop(valve_break_timer);
-    rt_timer_start(valve_deadzone_detect_timer);
-
-    run_status = VALVE_WORK_REVERSE;
-    rt_pin_write(MOTO_CLOSE_STATUS_PIN, PIN_LOW);
-    rt_pin_write(MOTO_OPEN_STATUS_PIN, PIN_LOW);
+    rt_memset(pos_value, 0, 10);
+    pos_senq_cnt = 0;
+    pos_total_cnt = 0;
+    run_status = -1;
+    detect_flag = 1;
     rt_pin_write(MOTO_OUTPUT1_PIN, PIN_HIGH);
     rt_pin_write(MOTO_OUTPUT2_PIN, PIN_LOW);
+    rt_timer_start(detect_timer);
 }
 
 rt_err_t valve_dead_calc(uint32_t *src,uint8_t blockSize)
 {
-    uint8_t blkCnt; /* Loop counter */
+    uint32_t blkCnt; /* Loop counter */
     int sum = 0; /* Temporary result storage */
     int meanOfSquares, squareOfMean; /* Square of mean and mean of square */
     int sumOfSquares = 0; /* Sum of squares */
     int in; /* Temporary variable to store input value */
+
+    if (blockSize <= 1U)
+    {
+        return RT_EOK;
+    }
 
     /* Initialize blkCnt with number of samples */
     blkCnt = blockSize;
@@ -365,11 +353,39 @@ rt_err_t valve_dead_calc(uint32_t *src,uint8_t blockSize)
     squareOfMean = (sum * sum / (int) (blockSize * (blockSize - 1U)));
 
     /* Compute variance and store result in destination */
-    if(meanOfSquares - squareOfMean > 100000)
+    if(meanOfSquares - squareOfMean > 1000)
     {
-        LOG_E("valve in dead zone,meanOfSquares is %d,squareOfMean is %d\r\n",meanOfSquares,squareOfMean);
+        rt_kprintf("dead_calc RT_ERROR,meanOfSquares is %d,squareOfMean is %d\r\n",meanOfSquares,squareOfMean);
         return RT_ERROR;
     }
 
     return RT_EOK;
+}
+
+void ofsave(void)
+{
+    open_forward_target_position = ADC_GetValue(1);
+    flash_set_key(0,open_forward_target_position);
+    rt_kprintf("open_forward_target_position set to %d\r\n",open_forward_target_position);
+}
+
+void obsave(void)
+{
+    open_backward_target_position = ADC_GetValue(1);
+    flash_set_key(1,open_backward_target_position);
+    rt_kprintf("open_backward_target_position set to %d\r\n",open_backward_target_position);
+}
+
+void cfsave(void)
+{
+    close_forward_target_position = ADC_GetValue(1);
+    flash_set_key(2,close_forward_target_position);
+    rt_kprintf("close_forward_target_position set to %d\r\n",close_forward_target_position);
+}
+
+void cbsave(void)
+{
+    close_backward_target_position = ADC_GetValue(1);
+    flash_set_key(3,close_backward_target_position);
+    rt_kprintf("close_backward_target_position set to %d\r\n",close_backward_target_position);
 }

@@ -19,22 +19,11 @@
 ADC_HandleTypeDef adc_handle;
 DMA_HandleTypeDef dma_adc_handle;
 
-uint32_t adc_value[4] = {0};
-
-void ADC_IRQHandler(void)
-{
-    HAL_ADC_IRQHandler(&adc_handle);
-}
-
-uint32_t ADC_GetValue(uint8_t id)
-{
-    return adc_value[0];
-}
+uint32_t adc_value[2] = {0};
 
 void adc_init(void)
 {
     /* DMA controller clock enable */
-    __HAL_RCC_DMAMUX1_CLK_ENABLE();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
     /* DMA interrupt init */
@@ -42,14 +31,19 @@ void adc_init(void)
     HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
     HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
 
-    ADC_ChannelConfTypeDef sConfig = { 0 };
+    /* DMA1_Channel2_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+    HAL_NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
 
-    /* USER CODE BEGIN ADC_Init 1 */
+    ADC_ChannelConfTypeDef sConfig = {0};
 
-    /* USER CODE END ADC_Init 1 */
+    /* USER CODE BEGIN ADC1_Init 1 */
+
+    /* USER CODE END ADC1_Init 1 */
+
     /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-     */
-    adc_handle.Instance = ADC;
+    */
+    adc_handle.Instance = ADC1;
     adc_handle.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
     adc_handle.Init.Resolution = ADC_RESOLUTION_12B;
     adc_handle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -58,14 +52,14 @@ void adc_init(void)
     adc_handle.Init.LowPowerAutoWait = DISABLE;
     adc_handle.Init.LowPowerAutoPowerOff = DISABLE;
     adc_handle.Init.ContinuousConvMode = ENABLE;
-    adc_handle.Init.NbrOfConversion = 1;
+    adc_handle.Init.NbrOfConversion = 2;
     adc_handle.Init.DiscontinuousConvMode = DISABLE;
     adc_handle.Init.ExternalTrigConv = ADC_SOFTWARE_START;
     adc_handle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     adc_handle.Init.DMAContinuousRequests = ENABLE;
     adc_handle.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-    adc_handle.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_79CYCLES_5;
-    adc_handle.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_79CYCLES_5;
+    adc_handle.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_19CYCLES_5;
+    adc_handle.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_19CYCLES_5;
     adc_handle.Init.OversamplingMode = DISABLE;
     adc_handle.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
     if (HAL_ADC_Init(&adc_handle) != HAL_OK)
@@ -74,8 +68,8 @@ void adc_init(void)
     }
 
     /** Configure Regular Channel
-     */
-    sConfig.Channel = ADC_CHANNEL_4;
+    */
+    sConfig.Channel = ADC_CHANNEL_0;
     sConfig.Rank = ADC_REGULAR_RANK_1;
     sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
     if (HAL_ADC_ConfigChannel(&adc_handle, &sConfig) != HAL_OK)
@@ -83,9 +77,40 @@ void adc_init(void)
         Error_Handler();
     }
 
-    /* USER CODE BEGIN ADC_Init 2 */
-    HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(ADC_IRQn);
+    /** Configure Regular Channel
+    */
+    sConfig.Channel = ADC_CHANNEL_8;
+    sConfig.Rank = ADC_REGULAR_RANK_2;
+    if (HAL_ADC_ConfigChannel(&adc_handle, &sConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
-    HAL_ADC_Start_DMA(&adc_handle, (uint32_t*) &adc_value, 4);
+    /* USER CODE BEGIN ADC_Init 2 */
+    HAL_NVIC_SetPriority(ADC1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_IRQn);
+
+    HAL_ADC_Start_DMA(&adc_handle, (uint32_t*) &adc_value, 2);
+    /* USER CODE END ADC_Init 2 */
+}
+
+void DMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&dma_adc_handle);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+
+void ADC1_IRQHandler(void)
+{
+    HAL_ADC_IRQHandler(&adc_handle);
+}
+
+uint32_t ADC_GetValue(uint8_t id)
+{
+    return adc_value[id];
 }

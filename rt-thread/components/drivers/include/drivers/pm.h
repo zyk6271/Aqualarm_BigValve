@@ -76,19 +76,19 @@ enum
 enum pm_module_id {
     PM_NONE_ID = 0,
     PM_POWER_ID,
-    PM_WATER_ID,
-    PM_BUTTON_ID,
-    PM_LED_ID,
-    PM_RF_ID,
-    PM_RTC_ID,
-    PM_PVD_ID,
+    PM_BOARD_ID,
+    PM_BSP_ID,
+    PM_MAIN_ID,
+    PM_PMS_ID,
+    PM_PMC_ID,
+    PM_TASK_ID,
     PM_SPI_ID,
     PM_I2C_ID,
     PM_UART_ID,
     PM_CAN_ID,
     PM_ETH_ID,
     PM_SENSOR_ID,
-    PM_WAIT_ID,
+    PM_LCD_ID,
     PM_KEY_ID,
     PM_TP_ID,
     PM_MODULE_MAX_ID, /* enum must! */
@@ -115,8 +115,8 @@ enum pm_module_id {
 /**
  * device control flag to request or release power
  */
-#define RT_PM_DEVICE_CTRL_REQUEST   0x01
-#define RT_PM_DEVICE_CTRL_RELEASE   0x00
+#define RT_PM_DEVICE_CTRL_RELEASE   (RT_DEVICE_CTRL_BASE(PM) + 0x00)
+#define RT_PM_DEVICE_CTRL_REQUEST   (RT_DEVICE_CTRL_BASE(PM) + 0x01)
 
 struct rt_pm;
 
@@ -185,8 +185,7 @@ struct rt_pm
 enum
 {
     RT_PM_ENTER_SLEEP = 0,
-    RT_PM_EXIT_SLEEP_WITHOUT_ISR,
-    RT_PM_EXIT_SLEEP_WITH_ISR,
+    RT_PM_EXIT_SLEEP,
 };
 
 struct rt_pm_notify

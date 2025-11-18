@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2018, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -13,12 +13,12 @@
 
 #include <rtthread.h>
 #include <rthw.h>
-#ifdef RT_USING_DEVICE
-#include <rtdevice.h>
-#endif
+#include <board.h>
+#include <stm32g0xx.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 void _Error_Handler(char *s, int num);
@@ -51,7 +51,6 @@ extern int __bss_end;
 #endif
 
 #define HEAP_END                       STM32_SRAM1_END
-
 #ifdef __cplusplus
 }
 #endif

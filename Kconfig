@@ -18,7 +18,7 @@ config PKGS_DIR
 config PLATFORM_DIR
     string
     option env="PLATFORM_DIR"
-    default "D:/Aqualarm_BigValve/platform"
+    default "D:/RT-ThreadStudio/workspace/Aqualarm_BigValve_G030/platform"
 
 source "$RTT_DIR/Kconfig"
 source "$PKGS_DIR/Kconfig"
@@ -26,7 +26,7 @@ source "$PKGS_DIR/packages/misc/samples/Kconfig"
 
 config RT_STUDIO_BUILT_IN
     bool
-    select ARCH_ARM_CORTEX_M4
+    select ARCH_ARM_CORTEX_M0
     select RT_USING_COMPONENTS_INIT
     select RT_USING_USER_MAIN
     default y

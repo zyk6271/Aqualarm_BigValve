@@ -10,29 +10,19 @@
 
 #ifndef APPLICATIONS_PIN_CONFIG_H_
 #define APPLICATIONS_PIN_CONFIG_H_
-/*
- * RF
- */
-#define RF_SW1_PIN                      6
-#define RF_SW2_PIN                      7
-#define TCXO_PWR_PIN                    16
 
 /*
  * MOTO
  */
-#define MOTO_OUTPUT1_PIN                1
-#define MOTO_OUTPUT2_PIN                2
-#define MOTO_CLOSE_STATUS_PIN           11
-#define MOTO_OPEN_STATUS_PIN            10
+#define MOTO_OUTPUT1_PIN                2
+#define MOTO_OUTPUT2_PIN                1
+#define MOTO_CLOSE_STATUS_PIN           6
+#define MOTO_OPEN_STATUS_PIN            7
 
 /*
  * KEY
  */
-#define KEY_HAND_PIN                    5
-#define KEY_WIRE_PIN                    28
-/*
- * BUZZER
- */
-#define BEEP_PIN                        24
+#define KEY_HAND_PIN                    3
+#define KEY_WIRE_PIN                    11
 
 #endif /* APPLICATIONS_PIN_CONFIG_H_ */

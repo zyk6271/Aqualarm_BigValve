@@ -1,17 +1,7 @@
-/*
- * Copyright (c) 2006-2021, RT-Thread Development Team
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Change Logs:
- * Date           Author       Notes
- * 2023-07-03     Tobby       the first version
- */
 #include "rtthread.h"
 #include "rtdevice.h"
 #include "pin_config.h"
 #include <agile_button.h>
-#include "flashwork.h"
 
 #define DBG_TAG "sign"
 #define DBG_LVL DBG_LOG
@@ -32,21 +22,26 @@ uint8_t wire_button_level_read(void)
 
 void switch_button_up_callback(agile_btn_t *btn)
 {
+    rt_kprintf("switch_button_up_callback\r\n");
     valve_manually(1);
 }
 
 void switch_button_down_callback(agile_btn_t *btn)
 {
+    rt_kprintf("switch_button_down_callback\r\n");
     valve_manually(0);
+    valve_position_reset();
 }
 
 void wire_button_up_callback(agile_btn_t *btn)
 {
+    rt_kprintf("wire_button_up_callback\r\n");
     valve_open();
 }
 
 void wire_button_down_callback(agile_btn_t *btn)
 {
+    rt_kprintf("wire_button_down_callback\r\n");
     valve_close();
 }
 

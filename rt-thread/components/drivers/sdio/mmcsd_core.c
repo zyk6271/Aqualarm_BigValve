@@ -609,38 +609,6 @@ int mmcsd_wait_cd_changed(rt_int32_t timeout)
 }
 RTM_EXPORT(mmcsd_wait_cd_changed);
 
-uint8_t mount_dir = 0;
-void mmcsd_mount(struct rt_mmcsd_host *host)
-{
-//    mount_dir = 0;
-    rt_mb_send(&mmcsd_detect_mb, (rt_ubase_t)host);
-}
-void mmcsd_unount_async(struct rt_mmcsd_host *host)
-{
-    mount_dir = 1;
-    rt_mb_send(&mmcsd_detect_mb, (rt_ubase_t)host);
-}
-void mmcsd_unount_sync(struct rt_mmcsd_host *host)
-{
-    if(host->card == RT_NULL)
-    {
-        LOG_W("sdcard is already unmount!");
-        return;
-    }
-    if (host->card->sdio_function_num != 0)
-    {
-        LOG_W("unsupport sdio card plug out!");
-    }
-    else
-    {
-        rt_mmcsd_blk_remove(host->card);
-        rt_free(host->card);
-
-        host->card = RT_NULL;
-        LOG_I("mmcsd_unount success\r\n");
-    }
-}
-
 void mmcsd_change(struct rt_mmcsd_host *host)
 {
     rt_mb_send(&mmcsd_detect_mb, (rt_ubase_t)host);
@@ -658,7 +626,6 @@ void mmcsd_detect(void *param)
         {
             if (host->card == RT_NULL)
             {
-                ocr = 0;
                 mmcsd_host_lock(host);
                 mmcsd_power_up(host);
                 mmcsd_go_idle(host);
