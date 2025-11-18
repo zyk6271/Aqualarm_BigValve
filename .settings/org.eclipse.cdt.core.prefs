@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.553091094/PATH/delimiter=;
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.553091094/PATH/operation=replace
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.553091094/PATH/value=D\:\\RT-ThreadStudio\\platform\\env_released\\env\\tools\\BuildTools\\2.12-20190422-1053\\bin;D\:\\RT-ThreadStudio\\repo\\Extract\\ToolChain_Support_Packages\\ARM\\GNU_Tools_for_ARM_Embedded_Processors\\10.2.1\\bin;${studio_install_path}${project_gener_relative_path}/builder;${studio_install_path}${project_gener_relative_path}/mdk
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.553091094/append=true
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.553091094/appendContributed=true
